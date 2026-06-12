@@ -82,7 +82,9 @@ def update_doctor_license(doctor_id, license_number, document_path=None):
 # ============ ESTATÍSTICAS DO SISTEMA ============
 
 def get_system_stats():
-    """Estatísticas gerais do sistema"""
+    """Estatísticas gerais do sistema (compatível com PostgreSQL)"""
+    from sqlalchemy import func, extract
+    
     total_doctors = User.query.count()
     verified_doctors = User.query.filter_by(is_verified=True, is_active=True).count()
     pending_doctors = User.query.filter_by(is_verified=False, is_active=True).count()
@@ -92,29 +94,39 @@ def get_system_stats():
     total_consultations = Consultation.query.count()
     total_exams = Exam.query.count()
     
-    # Consultas por mês (últimos 12 meses)
+    # Consultas por mês (compatível com PostgreSQL)
+    # Usar extract para PostgreSQL
     consultations_by_month = db.session.query(
-        func.strftime('%Y-%m', Consultation.consultation_date).label('month'),
+        func.concat(func.extract('year', Consultation.consultation_date), '-', 
+                    func.lpad(func.extract('month', Consultation.consultation_date), 2, '0')).label('month'),
         func.count(Consultation.id).label('total')
     ).group_by('month').order_by('month').limit(12).all()
     
-    # Exames por mês (últimos 12 meses)
+    # Converter para lista de dicionários
+    consultations_list = []
+    for item in consultations_by_month:
+        consultations_list.append({
+            'month': item[0],
+            'consultations': item[1]
+        })
+    
+    # Exames por mês
     exams_by_month = db.session.query(
-        func.strftime('%Y-%m', Exam.exam_date).label('month'),
+        func.concat(func.extract('year', Exam.exam_date), '-', 
+                    func.lpad(func.extract('month', Exam.exam_date), 2, '0')).label('month'),
         func.count(Exam.id).label('total')
     ).group_by('month').order_by('month').limit(12).all()
     
-    # Converter para dicionário para fácil acesso
+    # Criar dicionário de exames por mês
     exams_dict = {e[0]: e[1] for e in exams_by_month}
     
-    # Combinar consultas e exames por mês
+    # Combinar
     combined_stats = []
-    for c in consultations_by_month:
-        month = c[0]
+    for c in consultations_list:
         combined_stats.append({
-            'month': month,
-            'consultations': c[1],
-            'exams': exams_dict.get(month, 0)
+            'month': c['month'],
+            'consultations': c['consultations'],
+            'exams': exams_dict.get(c['month'], 0)
         })
     
     return {

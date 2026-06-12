@@ -5,21 +5,19 @@ from app.models.diagnosis import Diagnosis
 from datetime import datetime, timedelta
 from flask_login import current_user
 from datetime import timedelta
+from sqlalchemy import func
 
 def get_dashboard_stats(doctor_id=None):
-    """Buscar estatísticas para o dashboard"""
+    """Buscar estatísticas para o dashboard (compatível com PostgreSQL)"""
     
     # Pacientes totais
     total_patients = Patient.query.count()
     
-    # Consultas de hoje
+    # Consultas de hoje (usando date em vez de datetime)
     today = datetime.now().date()
-    today_start = datetime(today.year, today.month, today.day, 0, 0, 0)
-    today_end = datetime(today.year, today.month, today.day, 23, 59, 59)
     
     query = Consultation.query.filter(
-        Consultation.consultation_date >= today_start,
-        Consultation.consultation_date <= today_end
+        func.date(Consultation.consultation_date) == today
     )
     
     if doctor_id:
@@ -27,28 +25,24 @@ def get_dashboard_stats(doctor_id=None):
     
     today_consultations = query.count()
     
-    # Exames pendentes (sem resultados)
+    # Exames pendentes (últimos 30 dias)
     thirty_days_ago = datetime.now() - timedelta(days=30)
-
     pending_exams = Exam.query.filter(
         (Exam.results == None) | (Exam.results == ''),
         Exam.created_at >= thirty_days_ago
     ).count()
     
-    # Análises IA Hoje - contar exames analisados pela IA hoje
+    # Análises IA hoje
     ai_analyses_today = Exam.query.filter(
         Exam.ai_analyzed == True,
-        Exam.ai_analysis_date >= today_start,
-        Exam.ai_analysis_date <= today_end
+        func.date(Exam.ai_analysis_date) == today
     ).count()
     
-    # Se não houver exames analisados hoje, contar também diagnósticos com IA
     if ai_analyses_today == 0:
         ai_analyses_today = Diagnosis.query.filter(
             Diagnosis.ai_suggestion != None,
             Diagnosis.ai_suggestion != '',
-            Diagnosis.created_at >= today_start,
-            Diagnosis.created_at <= today_end
+            func.date(Diagnosis.created_at) == today
         ).count()
     
     return {
