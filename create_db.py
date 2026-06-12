@@ -10,7 +10,7 @@ def add_director_admin():
     
     with app.app_context():
         # Verificar se já existe
-        existing = User.query.filter_by(email="muhilicar@gmail.com").first()
+        existing = User.query.filter_by(email="botelholupapa@gmail.com").first()
         
         if existing:
             print(f"⚠️ Utilizador já existe!")
@@ -31,8 +31,8 @@ def add_director_admin():
         
         # Criar novo Administrador
         admin = User(
-            name="Rafael M. Muhilica",
-            email="muhilicar@gmail.com",
+            name="Botelho Castro Lupapa",
+            email="botelholupapa@gmail.com",
             role="admin",
             is_verified=True,
             is_active=True,
@@ -41,7 +41,7 @@ def add_director_admin():
             hospital="MedIntel Angola",
             registration_date=datetime.now()
         )
-        admin.set_password("R1f1el17")
+        admin.set_password("C4str0Lup4p4")  # Definir password
         
         db.session.add(admin)
         db.session.commit()
@@ -49,9 +49,9 @@ def add_director_admin():
         print("=" * 50)
         print("✅ ADMINISTRADOR CRIADO COM SUCESSO!")
         print("=" * 50)
-        print(f"📧 Email: muhilicar@gmail.com")
-        print(f"🔑 Password: R1f1el17")
-        print(f"👤 Nome: Rafael M. Muhilica")
+        print(f"📧 Email: botelholupapa@gmail.com")
+        print(f"🔑 Password: C4str0Lup4p4")
+        print(f"👤 Nome: Botelho Castro Lupapa")
         print(f"⭐ Role: Administrador")
         print("=" * 50)
 
